@@ -1,0 +1,1 @@
+# isaac-mod-set-max-scale
