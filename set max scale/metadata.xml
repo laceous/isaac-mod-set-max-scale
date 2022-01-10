@@ -11,8 +11,10 @@ This mod can auto-update MaxScale depending on if you're in a normal vs large ro
 
 Unfortunately, setting MaxScale via the API doesn't do anything on its own. We need to trigger an update. For now, that happens by toggling fullscreen (on then back off, or off then back on). That might be too annoying for some, but it appears to be a limitation of the API.
 
-Mod Config Menu is required to change settings.</description>
-    <version>1.1</version>
+Mod Config Menu is required to change settings.
+
+You can now press &lt; or &gt; (shift + , or shift + .) to cycle through the available options for the current room size.</description>
+    <version>1.2</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Tweaks"/>
