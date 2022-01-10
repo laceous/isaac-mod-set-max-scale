@@ -35,44 +35,41 @@ end
 -- check the keyboard every frame
 -- putting this in onUpdate will miss keypresses sometimes
 function mod:onRender()
-  for k = 0, game:GetNumPlayers() - 1 do
-    -- shift + , = <
-    if (Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, k) or Input.IsButtonPressed(Keyboard.KEY_RIGHT_SHIFT, k)) and Input.IsButtonTriggered(Keyboard.KEY_COMMA, k) then
-      if mod:isRoom1x2() then
-        local i = mod:getMaxScalesIndex(mod.state.room1x2)
-        mod.state.room1x2 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
-      elseif mod:isRoom2x1() then
-        local i = mod:getMaxScalesIndex(mod.state.room2x1)
-        mod.state.room2x1 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
-      elseif mod:isRoom2x2() then
-        local i = mod:getMaxScalesIndex(mod.state.room2x2)
-        mod.state.room2x2 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
-      else -- 1x1
-        local i = mod:getMaxScalesIndex(mod.state.room1x1)
-        mod.state.room1x1 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
-      end
-      
-      mod:update()
-      break
-    -- shift + . = >
-    elseif (Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, k) or Input.IsButtonPressed(Keyboard.KEY_RIGHT_SHIFT, k)) and Input.IsButtonTriggered(Keyboard.KEY_PERIOD, k) then
-      if mod:isRoom1x2() then
-        local i = mod:getMaxScalesIndex(mod.state.room1x2)
-        mod.state.room1x2 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
-      elseif mod:isRoom2x1() then
-        local i = mod:getMaxScalesIndex(mod.state.room2x1)
-        mod.state.room2x1 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
-      elseif mod:isRoom2x2() then
-        local i = mod:getMaxScalesIndex(mod.state.room2x2)
-        mod.state.room2x2 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
-      else -- 1x1
-        local i = mod:getMaxScalesIndex(mod.state.room1x1)
-        mod.state.room1x1 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
-      end
-      
-      mod:update()
-      break
+  local keyboard = 0 -- keyboard seems to always be at index zero, even if you have multiple keyboards plugged in, controllers start at 1
+  
+  -- shift + , = <
+  if (Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, keyboard) or Input.IsButtonPressed(Keyboard.KEY_RIGHT_SHIFT, keyboard)) and Input.IsButtonTriggered(Keyboard.KEY_COMMA, keyboard) then
+    if mod:isRoom1x2() then
+      local i = mod:getMaxScalesIndex(mod.state.room1x2)
+      mod.state.room1x2 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
+    elseif mod:isRoom2x1() then
+      local i = mod:getMaxScalesIndex(mod.state.room2x1)
+      mod.state.room2x1 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
+    elseif mod:isRoom2x2() then
+      local i = mod:getMaxScalesIndex(mod.state.room2x2)
+      mod.state.room2x2 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
+    else -- 1x1
+      local i = mod:getMaxScalesIndex(mod.state.room1x1)
+      mod.state.room1x1 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
     end
+    mod:update()
+    
+  -- shift + . = >
+  elseif (Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, keyboard) or Input.IsButtonPressed(Keyboard.KEY_RIGHT_SHIFT, keyboard)) and Input.IsButtonTriggered(Keyboard.KEY_PERIOD, keyboard) then
+    if mod:isRoom1x2() then
+      local i = mod:getMaxScalesIndex(mod.state.room1x2)
+      mod.state.room1x2 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
+    elseif mod:isRoom2x1() then
+      local i = mod:getMaxScalesIndex(mod.state.room2x1)
+      mod.state.room2x1 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
+    elseif mod:isRoom2x2() then
+      local i = mod:getMaxScalesIndex(mod.state.room2x2)
+      mod.state.room2x2 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
+    else -- 1x1
+      local i = mod:getMaxScalesIndex(mod.state.room1x1)
+      mod.state.room1x1 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
+    end
+    mod:update()
   end
 end
 
