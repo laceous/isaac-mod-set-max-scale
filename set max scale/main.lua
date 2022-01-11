@@ -83,7 +83,7 @@ end
 
 function mod:loadSaveData()
   if mod:HasData() then
-    local state = json.decode(mod:LoadData())
+    local _, state = pcall(json.decode, mod:LoadData()) -- deal with bad json data
     
     if type(state) == 'table' then
       if type(state.useGlobal) == 'boolean' then
