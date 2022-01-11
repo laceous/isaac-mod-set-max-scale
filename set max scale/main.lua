@@ -7,6 +7,8 @@ mod.maxScales = { 1, 2, 3, 4, 99 }
 mod.allowUpdate = false
 
 mod.state = {}
+mod.state.useGlobal = true
+mod.state.global = 99
 mod.state.room1x1 = 99
 mod.state.room1x2 = 4
 mod.state.room2x1 = 4
@@ -18,11 +20,11 @@ function mod:onGameExit()
   
   -- set the menu scale when exiting back to the menu
   -- this doesn't work when exiting the game while in-game
-  mod:update(mod.state.menu)
+  mod:update(mod.state.useGlobal and mod.state.global or mod.state.menu)
 end
 
 function mod:onNewRoom()
-  mod.allowUpdate = true
+  mod.allowUpdate = not mod.state.useGlobal
 end
 
 function mod:onUpdate()
@@ -39,7 +41,10 @@ function mod:onRender()
   
   -- shift + , = <
   if (Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, keyboard) or Input.IsButtonPressed(Keyboard.KEY_RIGHT_SHIFT, keyboard)) and Input.IsButtonTriggered(Keyboard.KEY_COMMA, keyboard) then
-    if mod:isRoom1x2() then
+    if mod.state.useGlobal then
+      local i = mod:getMaxScalesIndex(mod.state.global)
+      mod.state.global = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
+    elseif mod:isRoom1x2() then
       local i = mod:getMaxScalesIndex(mod.state.room1x2)
       mod.state.room1x2 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
     elseif mod:isRoom2x1() then
@@ -56,7 +61,10 @@ function mod:onRender()
     
   -- shift + . = >
   elseif (Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, keyboard) or Input.IsButtonPressed(Keyboard.KEY_RIGHT_SHIFT, keyboard)) and Input.IsButtonTriggered(Keyboard.KEY_PERIOD, keyboard) then
-    if mod:isRoom1x2() then
+    if mod.state.useGlobal then
+      local i = mod:getMaxScalesIndex(mod.state.global)
+      mod.state.global = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
+    elseif mod:isRoom1x2() then
       local i = mod:getMaxScalesIndex(mod.state.room1x2)
       mod.state.room1x2 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
     elseif mod:isRoom2x1() then
@@ -78,6 +86,12 @@ function mod:loadSaveData()
     local state = json.decode(mod:LoadData())
     
     if type(state) == 'table' then
+      if type(state.useGlobal) == 'boolean' then
+        mod.state.useGlobal = state.useGlobal
+      end
+      if math.type(state.global) == 'integer' and mod:getMaxScalesIndex(state.global) >= 1 then
+        mod.state.global = state.global
+      end
       if math.type(state.room1x1) == 'integer' and mod:getMaxScalesIndex(state.room1x1) >= 1 then
         mod.state.room1x1 = state.room1x1
       end
@@ -101,6 +115,8 @@ function mod:update(override)
   local maxScale
   if math.type(override) == 'integer' and mod:getMaxScalesIndex(override) >= 1 then
     maxScale = override
+  elseif mod.state.useGlobal then
+    maxScale = mod.state.global
   elseif mod:isRoom1x2() then
     maxScale = mod.state.room1x2
   elseif mod:isRoom2x1() then
@@ -161,6 +177,46 @@ end
 function mod:setupModConfigMenu()
   ModConfigMenu.AddSetting(
     mod.Name,
+    'Global',
+    {
+      Type = ModConfigMenu.OptionType.BOOLEAN,
+      CurrentSetting = function()
+        return mod.state.useGlobal
+      end,
+      Display = function()
+        return mod.state.useGlobal and 'Use global setting' or 'Use per room settings'
+      end,
+      OnChange = function(b)
+        mod.state.useGlobal = b
+        mod:update()
+      end,
+      Info = { 'Use global or per room (and menu) settings' }
+    }
+  )
+  ModConfigMenu.AddSetting(
+    mod.Name,
+    'Global',
+    {
+      Type = ModConfigMenu.OptionType.NUMBER,
+      CurrentSetting = function()
+        return mod:getMaxScalesIndex(mod.state.global)
+      end,
+      Minimum = 1,
+      Maximum = #mod.maxScales,
+      Display = function()
+        return 'Global: ' .. (mod.state.useGlobal and mod.state.global or '(per room)')
+      end,
+      OnChange = function(n)
+        if mod.state.useGlobal then
+          mod.state.global = mod.maxScales[n]
+          mod:update()
+        end
+      end,
+      Info = { 'Default: 99' }
+    }
+  )
+  ModConfigMenu.AddSetting(
+    mod.Name,
     'Rooms',
     {
       Type = ModConfigMenu.OptionType.NUMBER,
@@ -170,11 +226,13 @@ function mod:setupModConfigMenu()
       Minimum = 1,
       Maximum = #mod.maxScales,
       Display = function()
-        return '1x1: ' .. mod.state.room1x1
+        return '1x1: ' .. (mod.state.useGlobal and '(global)' or mod.state.room1x1)
       end,
       OnChange = function(n)
-        mod.state.room1x1 = mod.maxScales[n]
-        mod:update()
+        if not mod.state.useGlobal then
+          mod.state.room1x1 = mod.maxScales[n]
+          mod:update()
+        end
       end,
       Info = { 'Default: 99' }
     }
@@ -190,11 +248,13 @@ function mod:setupModConfigMenu()
       Minimum = 1,
       Maximum = #mod.maxScales,
       Display = function()
-        return '1x2: ' .. mod.state.room1x2
+        return '1x2: ' .. (mod.state.useGlobal and '(global)' or mod.state.room1x2)
       end,
       OnChange = function(n)
-        mod.state.room1x2 = mod.maxScales[n]
-        mod:update()
+        if not mod.state.useGlobal then
+          mod.state.room1x2 = mod.maxScales[n]
+          mod:update()
+        end
       end,
       Info = { 'Recommended: 1-4' }
     }
@@ -210,11 +270,13 @@ function mod:setupModConfigMenu()
       Minimum = 1,
       Maximum = #mod.maxScales,
       Display = function()
-        return '2x1: ' .. mod.state.room2x1
+        return '2x1: ' .. (mod.state.useGlobal and '(global)' or mod.state.room2x1)
       end,
       OnChange = function(n)
-        mod.state.room2x1 = mod.maxScales[n]
-        mod:update()
+        if not mod.state.useGlobal then
+          mod.state.room2x1 = mod.maxScales[n]
+          mod:update()
+        end
       end,
       Info = { 'Recommended: 1-4' }
     }
@@ -230,11 +292,13 @@ function mod:setupModConfigMenu()
       Minimum = 1,
       Maximum = #mod.maxScales,
       Display = function()
-        return '2x2: ' .. mod.state.room2x2
+        return '2x2: ' .. (mod.state.useGlobal and '(global)' or mod.state.room2x2)
       end,
       OnChange = function(n)
-        mod.state.room2x2 = mod.maxScales[n]
-        mod:update()
+        if not mod.state.useGlobal then
+          mod.state.room2x2 = mod.maxScales[n]
+          mod:update()
+        end
       end,
       Info = { 'Recommended: 1-4' }
     }
@@ -250,15 +314,17 @@ function mod:setupModConfigMenu()
       Minimum = 1,
       Maximum = #mod.maxScales,
       Display = function()
-        return 'Menu: ' .. mod.state.menu
+        return 'Menu: ' .. (mod.state.useGlobal and '(global)' or mod.state.menu)
       end,
       OnChange = function(n)
-        mod.state.menu = mod.maxScales[n]
+        if not mod.state.useGlobal then
+          mod.state.menu = mod.maxScales[n]
+        end
       end,
       Info = { 'Default: 99' }
     }
   )
-  for _, value in ipairs({ 'Rooms', 'Menu' }) do
+  for _, value in ipairs({ 'Global', 'Rooms', 'Menu' }) do
     ModConfigMenu.AddSpace(mod.Name, value)
     ModConfigMenu.AddText(mod.Name, value, '1-4 and 99 are available to select')
     ModConfigMenu.AddText(mod.Name, value, '5-99 appear to have the same behavior')
@@ -271,7 +337,7 @@ end
 
 -- set the menu scale when starting up since this may have failed on exit
 mod:loadSaveData()
-mod:update(mod.state.menu)
+mod:update(mod.state.useGlobal and mod.state.global or mod.state.menu)
 
 mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, mod.onGameExit)
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.onNewRoom)
