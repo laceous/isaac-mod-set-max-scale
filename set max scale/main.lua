@@ -5,10 +5,10 @@ local game = Game()
 -- 5-99 seem to have the same behavior
 mod.maxScales = { 1, 2, 3, 4, 99 }
 mod.allowUpdate = false
+mod.global = 99
 
 mod.state = {}
 mod.state.useGlobal = true
-mod.state.global = 99
 mod.state.room1x1 = 99
 mod.state.room1x2 = 4
 mod.state.room2x1 = 4
@@ -20,7 +20,9 @@ function mod:onGameExit()
   
   -- set the menu scale when exiting back to the menu
   -- this doesn't work when exiting the game while in-game
-  mod:update(mod.state.useGlobal and mod.state.global or mod.state.menu)
+  if not mod.state.useGlobal then
+    mod:update(mod.state.menu)
+  end
 end
 
 function mod:onNewRoom()
@@ -36,47 +38,46 @@ end
 
 -- check the keyboard every frame
 -- putting this in onUpdate will miss keypresses sometimes
+-- this should go up or down based on the current room scale rather than the value from whichever room size (which is different than what we do for mod config menu)
 function mod:onRender()
   local keyboard = 0 -- keyboard seems to always be at index zero, even if you have multiple keyboards plugged in, controllers start at 1
   
   -- shift + , = <
   if (Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, keyboard) or Input.IsButtonPressed(Keyboard.KEY_RIGHT_SHIFT, keyboard)) and Input.IsButtonTriggered(Keyboard.KEY_COMMA, keyboard) then
+    local i = mod:getMaxScalesIndex(mod:getSnappedMaxScale())
+    local val = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
+    
     if mod.state.useGlobal then
-      local i = mod:getMaxScalesIndex(mod.state.global)
-      mod.state.global = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
+      mod.global = val
     elseif mod:isRoom1x2() then
-      local i = mod:getMaxScalesIndex(mod.state.room1x2)
-      mod.state.room1x2 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
+      mod.state.room1x2 = val
     elseif mod:isRoom2x1() then
-      local i = mod:getMaxScalesIndex(mod.state.room2x1)
-      mod.state.room2x1 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
+      mod.state.room2x1 = val
     elseif mod:isRoom2x2() then
-      local i = mod:getMaxScalesIndex(mod.state.room2x2)
-      mod.state.room2x2 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
+      mod.state.room2x2 = val
     else -- 1x1
-      local i = mod:getMaxScalesIndex(mod.state.room1x1)
-      mod.state.room1x1 = i == 1 and mod.maxScales[#mod.maxScales] or mod.maxScales[i-1]
+      mod.state.room1x1 = val
     end
+    
     mod:update()
     
   -- shift + . = >
   elseif (Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, keyboard) or Input.IsButtonPressed(Keyboard.KEY_RIGHT_SHIFT, keyboard)) and Input.IsButtonTriggered(Keyboard.KEY_PERIOD, keyboard) then
+    local i = mod:getMaxScalesIndex(mod:getSnappedMaxScale())
+    local val = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
+    
     if mod.state.useGlobal then
-      local i = mod:getMaxScalesIndex(mod.state.global)
-      mod.state.global = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
+      mod.global = val
     elseif mod:isRoom1x2() then
-      local i = mod:getMaxScalesIndex(mod.state.room1x2)
-      mod.state.room1x2 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
+      mod.state.room1x2 = val
     elseif mod:isRoom2x1() then
-      local i = mod:getMaxScalesIndex(mod.state.room2x1)
-      mod.state.room2x1 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
+      mod.state.room2x1 = val
     elseif mod:isRoom2x2() then
-      local i = mod:getMaxScalesIndex(mod.state.room2x2)
-      mod.state.room2x2 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
+      mod.state.room2x2 = val
     else -- 1x1
-      local i = mod:getMaxScalesIndex(mod.state.room1x1)
-      mod.state.room1x1 = i == #mod.maxScales and mod.maxScales[1] or mod.maxScales[i+1]
+      mod.state.room1x1 = val
     end
+    
     mod:update()
   end
 end
@@ -88,9 +89,6 @@ function mod:loadSaveData()
     if type(state) == 'table' then
       if type(state.useGlobal) == 'boolean' then
         mod.state.useGlobal = state.useGlobal
-      end
-      if math.type(state.global) == 'integer' and mod:getMaxScalesIndex(state.global) >= 1 then
-        mod.state.global = state.global
       end
       if math.type(state.room1x1) == 'integer' and mod:getMaxScalesIndex(state.room1x1) >= 1 then
         mod.state.room1x1 = state.room1x1
@@ -116,7 +114,7 @@ function mod:update(override)
   if math.type(override) == 'integer' and mod:getMaxScalesIndex(override) >= 1 then
     maxScale = override
   elseif mod.state.useGlobal then
-    maxScale = mod.state.global
+    maxScale = mod.global
   elseif mod:isRoom1x2() then
     maxScale = mod.state.room1x2
   elseif mod:isRoom2x1() then
@@ -164,6 +162,11 @@ function mod:toggleFullscreen()
   Options.Fullscreen = not Options.Fullscreen
 end
 
+-- snap MaxScale to our list of allowed maxScales
+function mod:getSnappedMaxScale()
+  return mod:getMaxScalesIndex(Options.MaxScale) >= 1 and Options.MaxScale or 99
+end
+
 function mod:getMaxScalesIndex(val)
   for i, value in ipairs(mod.maxScales) do
     if val == value then
@@ -188,6 +191,9 @@ function mod:setupModConfigMenu()
       end,
       OnChange = function(b)
         mod.state.useGlobal = b
+        if b then
+          mod.global = mod:getSnappedMaxScale()
+        end
         mod:update()
       end,
       Info = { 'Use global or per room (and menu) settings' }
@@ -199,16 +205,16 @@ function mod:setupModConfigMenu()
     {
       Type = ModConfigMenu.OptionType.NUMBER,
       CurrentSetting = function()
-        return mod:getMaxScalesIndex(mod.state.global)
+        return mod:getMaxScalesIndex(mod:getSnappedMaxScale())
       end,
       Minimum = 1,
       Maximum = #mod.maxScales,
       Display = function()
-        return 'Global: ' .. (mod.state.useGlobal and mod.state.global or '(per room)')
+        return 'Global: ' .. (mod.state.useGlobal and mod:getSnappedMaxScale() or '(per room)')
       end,
       OnChange = function(n)
         if mod.state.useGlobal then
-          mod.state.global = mod.maxScales[n]
+          mod.global = mod.maxScales[n]
           mod:update()
         end
       end,
@@ -337,7 +343,9 @@ end
 
 -- set the menu scale when starting up since this may have failed on exit
 mod:loadSaveData()
-mod:update(mod.state.useGlobal and mod.state.global or mod.state.menu)
+if not mod.state.useGlobal then
+  mod:update(mod.state.menu)
+end
 
 mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, mod.onGameExit)
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.onNewRoom)
