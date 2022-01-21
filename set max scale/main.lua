@@ -14,6 +14,7 @@ mod.state.room1x2 = 4
 mod.state.room2x1 = 4
 mod.state.room2x2 = 3
 mod.state.menu = 99
+mod.state.enableKeyboard = true
 
 function mod:onGameExit()
   mod:SaveData(json.encode(mod.state))
@@ -40,6 +41,10 @@ end
 -- putting this in onUpdate will miss keypresses sometimes
 -- this should go up or down based on the current room scale rather than the value from whichever room size (which is different than what we do for mod config menu)
 function mod:onRender()
+  if not mod.state.enableKeyboard then
+    return
+  end
+  
   local keyboard = 0 -- keyboard seems to always be at index zero, even if you have multiple keyboards plugged in, controllers start at 1
   
   -- shift + , = <
@@ -104,6 +109,9 @@ function mod:loadSaveData()
       end
       if math.type(state.menu) == 'integer' and mod:getMaxScalesIndex(state.menu) >= 1 then
         mod.state.menu = state.menu
+      end
+      if type(state.enableKeyboard) == 'boolean' then
+        mod.state.enableKeyboard = state.enableKeyboard
       end
     end
   end
@@ -187,7 +195,7 @@ function mod:setupModConfigMenu()
         return mod.state.useGlobal
       end,
       Display = function()
-        return mod.state.useGlobal and 'Use global setting' or 'Use per room settings'
+        return 'Use ' .. (mod.state.useGlobal and 'global setting' or 'per room settings')
       end,
       OnChange = function(b)
         mod.state.useGlobal = b
@@ -338,6 +346,29 @@ function mod:setupModConfigMenu()
     ModConfigMenu.AddText(mod.Name, value, 'This is equivalent to setting')
     ModConfigMenu.AddText(mod.Name, value, 'MaxScale in options.ini')
   end
+  ModConfigMenu.AddSetting(
+    mod.Name,
+    'Keyboard',
+    {
+      Type = ModConfigMenu.OptionType.BOOLEAN,
+      CurrentSetting = function()
+        return mod.state.enableKeyboard
+      end,
+      Display = function()
+        return 'Keyboard ' .. (mod.state.enableKeyboard and 'enabled' or 'disabled')
+      end,
+      OnChange = function(b)
+        mod.state.enableKeyboard = b
+      end,
+      Info = { 'Enable or disable keyboard controls' }
+    }
+  )
+  ModConfigMenu.AddSpace(mod.Name, 'Keyboard')
+  ModConfigMenu.AddText(mod.Name, 'Keyboard', 'Cycle through the')
+  ModConfigMenu.AddText(mod.Name, 'Keyboard', 'available options with')
+  ModConfigMenu.AddSpace(mod.Name, 'Keyboard')
+  ModConfigMenu.AddText(mod.Name, 'Keyboard',      '<      or      >')
+  ModConfigMenu.AddText(mod.Name, 'Keyboard', '(shift + ,) or (shift + .)')
 end
 -- end ModConfigMenu --
 
