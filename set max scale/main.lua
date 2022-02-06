@@ -13,6 +13,7 @@ mod.state.room1x1 = 99
 mod.state.room1x2 = 4
 mod.state.room2x1 = 4
 mod.state.room2x2 = 3
+mod.state.theBeast = 99
 mod.state.menu = 99
 mod.state.enableKeyboard = true
 
@@ -27,7 +28,12 @@ function mod:onGameExit()
 end
 
 function mod:onNewRoom()
-  mod.allowUpdate = not mod.state.useGlobal
+  if not mod.state.useGlobal and mod:isTheBeast() then
+    mod:update() -- the beast looks better triggering it from here
+    mod.allowUpdate = false
+  else
+    mod.allowUpdate = not mod.state.useGlobal
+  end
 end
 
 function mod:onUpdate()
@@ -54,6 +60,8 @@ function mod:onRender()
     
     if mod.state.useGlobal then
       mod.global = val
+    elseif mod:isTheBeast() then
+      mod.state.theBeast = val
     elseif mod:isRoom1x2() then
       mod.state.room1x2 = val
     elseif mod:isRoom2x1() then
@@ -73,6 +81,8 @@ function mod:onRender()
     
     if mod.state.useGlobal then
       mod.global = val
+    elseif mod:isTheBeast() then
+      mod.state.theBeast = val
     elseif mod:isRoom1x2() then
       mod.state.room1x2 = val
     elseif mod:isRoom2x1() then
@@ -107,6 +117,9 @@ function mod:loadSaveData()
       if math.type(state.room2x2) == 'integer' and mod:getMaxScalesIndex(state.room2x2) >= 1 then
         mod.state.room2x2 = state.room2x2
       end
+      if math.type(state.theBeast) == 'integer' and mod:getMaxScalesIndex(state.theBeast) >= 1 then
+        mod.state.theBeast = state.theBeast
+      end
       if math.type(state.menu) == 'integer' and mod:getMaxScalesIndex(state.menu) >= 1 then
         mod.state.menu = state.menu
       end
@@ -123,6 +136,8 @@ function mod:update(override)
     maxScale = override
   elseif mod.state.useGlobal then
     maxScale = mod.global
+  elseif mod:isTheBeast() then
+    maxScale = mod.state.theBeast
   elseif mod:isRoom1x2() then
     maxScale = mod.state.room1x2
   elseif mod:isRoom2x1() then
@@ -161,6 +176,17 @@ function mod:isRoom2x2()
          shape == RoomShape.ROOMSHAPE_LTR or
          shape == RoomShape.ROOMSHAPE_LBL or
          shape == RoomShape.ROOMSHAPE_LBR
+end
+
+function mod:isTheBeast()
+  local level = game:GetLevel()
+  local roomDesc = level:GetCurrentRoomDesc()
+  
+  return level:GetStage() == LevelStage.STAGE8 and
+         roomDesc.Data.Shape == RoomShape.ROOMSHAPE_1x1 and
+         roomDesc.Data.Type == RoomType.ROOM_DUNGEON and
+         roomDesc.Data.Variant == 666 and
+         roomDesc.Data.Name == 'Beast Room'
 end
 
 -- this is required for the MaxScale update to actually trigger
@@ -319,7 +345,29 @@ function mod:setupModConfigMenu()
   )
   ModConfigMenu.AddSetting(
     mod.Name,
-    'Menu',
+    'Misc',
+    {
+      Type = ModConfigMenu.OptionType.NUMBER,
+      CurrentSetting = function()
+        return mod:getMaxScalesIndex(mod.state.theBeast)
+      end,
+      Minimum = 1,
+      Maximum = #mod.maxScales,
+      Display = function()
+        return 'The Beast: ' .. (mod.state.useGlobal and '(global)' or mod.state.theBeast)
+      end,
+      OnChange = function(n)
+        if not mod.state.useGlobal then
+          mod.state.theBeast = mod.maxScales[n]
+          mod:update()
+        end
+      end,
+      Info = { 'Default: 99', 'This is a special 1x1 room' }
+    }
+  )
+  ModConfigMenu.AddSetting(
+    mod.Name,
+    'Misc',
     {
       Type = ModConfigMenu.OptionType.NUMBER,
       CurrentSetting = function()
@@ -338,7 +386,7 @@ function mod:setupModConfigMenu()
       Info = { 'Default: 99' }
     }
   )
-  for _, value in ipairs({ 'Global', 'Rooms', 'Menu' }) do
+  for _, value in ipairs({ 'Global', 'Rooms', 'Misc' }) do
     ModConfigMenu.AddSpace(mod.Name, value)
     ModConfigMenu.AddText(mod.Name, value, '1-4 and 99 are available to select')
     ModConfigMenu.AddText(mod.Name, value, '5-99 appear to have the same behavior')
