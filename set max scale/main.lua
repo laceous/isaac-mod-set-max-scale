@@ -51,6 +51,10 @@ function mod:onRender()
     return
   end
   
+  if game:IsPaused() then
+    return
+  end
+  
   local keyboard = 0 -- keyboard seems to always be at index zero, even if you have multiple keyboards plugged in, controllers start at 1
   
   -- shift + , = <
