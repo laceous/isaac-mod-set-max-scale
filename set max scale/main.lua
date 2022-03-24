@@ -229,6 +229,7 @@ function mod:setupModConfigMenu()
       end,
       OnChange = function(b)
         mod.state.useGlobal = b
+        mod:SaveData(json.encode(mod.state))
         if b then
           mod.global = mod:getSnappedMaxScale()
         end
@@ -275,6 +276,7 @@ function mod:setupModConfigMenu()
       OnChange = function(n)
         if not mod.state.useGlobal then
           mod.state.room1x1 = mod.maxScales[n]
+          mod:SaveData(json.encode(mod.state))
           mod:update()
         end
       end,
@@ -297,6 +299,7 @@ function mod:setupModConfigMenu()
       OnChange = function(n)
         if not mod.state.useGlobal then
           mod.state.room1x2 = mod.maxScales[n]
+          mod:SaveData(json.encode(mod.state))
           mod:update()
         end
       end,
@@ -319,6 +322,7 @@ function mod:setupModConfigMenu()
       OnChange = function(n)
         if not mod.state.useGlobal then
           mod.state.room2x1 = mod.maxScales[n]
+          mod:SaveData(json.encode(mod.state))
           mod:update()
         end
       end,
@@ -341,6 +345,7 @@ function mod:setupModConfigMenu()
       OnChange = function(n)
         if not mod.state.useGlobal then
           mod.state.room2x2 = mod.maxScales[n]
+          mod:SaveData(json.encode(mod.state))
           mod:update()
         end
       end,
@@ -363,6 +368,7 @@ function mod:setupModConfigMenu()
       OnChange = function(n)
         if not mod.state.useGlobal then
           mod.state.theBeast = mod.maxScales[n]
+          mod:SaveData(json.encode(mod.state))
           mod:update()
         end
       end,
@@ -385,6 +391,7 @@ function mod:setupModConfigMenu()
       OnChange = function(n)
         if not mod.state.useGlobal then
           mod.state.menu = mod.maxScales[n]
+          mod:SaveData(json.encode(mod.state))
         end
       end,
       Info = { 'Default: 99' }
@@ -411,6 +418,7 @@ function mod:setupModConfigMenu()
       end,
       OnChange = function(b)
         mod.state.enableKeyboard = b
+        mod:SaveData(json.encode(mod.state))
       end,
       Info = { 'Enable or disable keyboard controls' }
     }
