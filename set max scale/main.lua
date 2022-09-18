@@ -216,6 +216,9 @@ end
 
 -- start ModConfigMenu --
 function mod:setupModConfigMenu()
+  for _, v in ipairs({ 'Global', 'Rooms', 'Misc', 'Keyboard' }) do
+    ModConfigMenu.RemoveSubcategory(mod.Name, v)
+  end
   ModConfigMenu.AddSetting(
     mod.Name,
     'Global',
