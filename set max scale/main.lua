@@ -18,7 +18,7 @@ mod.state.menu = 99
 mod.state.enableKeyboard = true
 
 function mod:onGameExit()
-  mod:SaveData(json.encode(mod.state))
+  mod:save()
   
   -- set the menu scale when exiting back to the menu
   -- this doesn't work when exiting the game while in-game
@@ -134,6 +134,10 @@ function mod:loadSaveData()
   end
 end
 
+function mod:save()
+  mod:SaveData(json.encode(mod.state))
+end
+
 function mod:update(override)
   local maxScale
   if math.type(override) == 'integer' and mod:getMaxScalesIndex(override) >= 1 then
@@ -232,7 +236,7 @@ function mod:setupModConfigMenu()
       end,
       OnChange = function(b)
         mod.state.useGlobal = b
-        mod:SaveData(json.encode(mod.state))
+        mod:save()
         if b then
           mod.global = mod:getSnappedMaxScale()
         end
@@ -279,7 +283,7 @@ function mod:setupModConfigMenu()
       OnChange = function(n)
         if not mod.state.useGlobal then
           mod.state.room1x1 = mod.maxScales[n]
-          mod:SaveData(json.encode(mod.state))
+          mod:save()
           mod:update()
         end
       end,
@@ -302,7 +306,7 @@ function mod:setupModConfigMenu()
       OnChange = function(n)
         if not mod.state.useGlobal then
           mod.state.room1x2 = mod.maxScales[n]
-          mod:SaveData(json.encode(mod.state))
+          mod:save()
           mod:update()
         end
       end,
@@ -325,7 +329,7 @@ function mod:setupModConfigMenu()
       OnChange = function(n)
         if not mod.state.useGlobal then
           mod.state.room2x1 = mod.maxScales[n]
-          mod:SaveData(json.encode(mod.state))
+          mod:save()
           mod:update()
         end
       end,
@@ -348,7 +352,7 @@ function mod:setupModConfigMenu()
       OnChange = function(n)
         if not mod.state.useGlobal then
           mod.state.room2x2 = mod.maxScales[n]
-          mod:SaveData(json.encode(mod.state))
+          mod:save()
           mod:update()
         end
       end,
@@ -371,7 +375,7 @@ function mod:setupModConfigMenu()
       OnChange = function(n)
         if not mod.state.useGlobal then
           mod.state.theBeast = mod.maxScales[n]
-          mod:SaveData(json.encode(mod.state))
+          mod:save()
           mod:update()
         end
       end,
@@ -394,7 +398,7 @@ function mod:setupModConfigMenu()
       OnChange = function(n)
         if not mod.state.useGlobal then
           mod.state.menu = mod.maxScales[n]
-          mod:SaveData(json.encode(mod.state))
+          mod:save()
         end
       end,
       Info = { 'Default: 99' }
@@ -421,7 +425,7 @@ function mod:setupModConfigMenu()
       end,
       OnChange = function(b)
         mod.state.enableKeyboard = b
-        mod:SaveData(json.encode(mod.state))
+        mod:save()
       end,
       Info = { 'Enable or disable keyboard controls' }
     }

@@ -14,7 +14,7 @@ Unfortunately, setting MaxScale via the API doesn't do anything on its own. We n
 Mod Config Menu is required to change settings.
 
 You can press &lt; or &gt; (shift + , or shift + .) on your keyboard to cycle through the available options.</description>
-    <version>1.11</version>
+    <version>1.12</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Tweaks"/>
