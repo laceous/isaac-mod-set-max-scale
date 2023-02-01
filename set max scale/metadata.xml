@@ -7,14 +7,14 @@
 
 The default of 99 works fine for normal rooms, but if you're in a larger room then you may want to set this to 1-4 to zoom out a bit. For some reason, 5-99 appear to have the same behavior.
 
-This mod can auto-update MaxScale depending on if you're in a normal vs large room. There's also separate options for The Beast and the menu.
+This mod can auto-update MaxScale depending on if you're in a normal vs large room. There's also separate options for Mother, The Beast, and the menu.
 
 Unfortunately, setting MaxScale via the API doesn't do anything on its own. We need to trigger an update. For now, that happens by toggling fullscreen (on then back off, or off then back on). That might be too annoying for some, but it appears to be a limitation of the API.
 
 Mod Config Menu is required to change settings.
 
 You can press &lt; or &gt; (shift + , or shift + .) on your keyboard to cycle through the available options.</description>
-    <version>1.12</version>
+    <version>1.13</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Tweaks"/>

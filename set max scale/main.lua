@@ -13,7 +13,9 @@ mod.state.room1x1 = 99
 mod.state.room1x2 = 4
 mod.state.room2x1 = 4
 mod.state.room2x2 = 3
-mod.state.theBeast = 99
+mod.state.mother1 = 4  -- 1x1ish
+mod.state.mother2 = 4   -- 1x2
+mod.state.theBeast = 99 -- 1x1
 mod.state.menu = 99
 mod.state.enableKeyboard = true
 
@@ -39,7 +41,7 @@ end
 function mod:onUpdate()
   if mod.allowUpdate then
     mod:update() -- doing this here rather than in onNewRoom lets us see the room transition animation
-    mod.allowUpdate = false
+    mod.allowUpdate = not mod.state.useGlobal and mod:isMother()
   end
 end
 
@@ -64,6 +66,8 @@ function mod:onRender()
     
     if mod.state.useGlobal then
       mod.global = val
+    elseif mod:isMother() then
+      mod.state[mod:getMotherState()] = val
     elseif mod:isTheBeast() then
       mod.state.theBeast = val
     elseif mod:isRoom1x2() then
@@ -85,6 +89,8 @@ function mod:onRender()
     
     if mod.state.useGlobal then
       mod.global = val
+    elseif mod:isMother() then
+      mod.state[mod:getMotherState()] = val
     elseif mod:isTheBeast() then
       mod.state.theBeast = val
     elseif mod:isRoom1x2() then
@@ -109,23 +115,10 @@ function mod:loadSaveData()
       if type(state.useGlobal) == 'boolean' then
         mod.state.useGlobal = state.useGlobal
       end
-      if math.type(state.room1x1) == 'integer' and mod:getMaxScalesIndex(state.room1x1) >= 1 then
-        mod.state.room1x1 = state.room1x1
-      end
-      if math.type(state.room1x2) == 'integer' and mod:getMaxScalesIndex(state.room1x2) >= 1 then
-        mod.state.room1x2 = state.room1x2
-      end
-      if math.type(state.room2x1) == 'integer' and mod:getMaxScalesIndex(state.room2x1) >= 1 then
-        mod.state.room2x1 = state.room2x1
-      end
-      if math.type(state.room2x2) == 'integer' and mod:getMaxScalesIndex(state.room2x2) >= 1 then
-        mod.state.room2x2 = state.room2x2
-      end
-      if math.type(state.theBeast) == 'integer' and mod:getMaxScalesIndex(state.theBeast) >= 1 then
-        mod.state.theBeast = state.theBeast
-      end
-      if math.type(state.menu) == 'integer' and mod:getMaxScalesIndex(state.menu) >= 1 then
-        mod.state.menu = state.menu
+      for _, v in ipairs({ 'room1x1', 'room1x2', 'room2x1', 'room2x2', 'mother1', 'mother2', 'theBeast', 'menu' }) do
+        if math.type(state[v]) == 'integer' and mod:getMaxScalesIndex(state[v]) >= 1 then
+          mod.state[v] = state[v]
+        end
       end
       if type(state.enableKeyboard) == 'boolean' then
         mod.state.enableKeyboard = state.enableKeyboard
@@ -144,6 +137,8 @@ function mod:update(override)
     maxScale = override
   elseif mod.state.useGlobal then
     maxScale = mod.global
+  elseif mod:isMother() then
+    maxScale = mod.state[mod:getMotherState()]
   elseif mod:isTheBeast() then
     maxScale = mod.state.theBeast
   elseif mod:isRoom1x2() then
@@ -186,15 +181,50 @@ function mod:isRoom2x2()
          shape == RoomShape.ROOMSHAPE_LBR
 end
 
+-- mother phase 1 has GRID_WALL @ 151-163, 166-178, 181-193, 196-208, 211-223
+function mod:getMotherState()
+  local room = game:GetRoom()
+  
+  local gridEntity = room:GetGridEntity(151)
+  if gridEntity and gridEntity:GetType() == GridEntityType.GRID_WALL then
+    return 'mother1'
+  end
+  
+  return 'mother2'
+end
+
+function mod:isMother()
+  local level = game:GetLevel()
+  local roomDesc = level:GetCurrentRoomDesc()
+  local stage = level:GetStage()
+  local stageType = level:GetStageType()
+  
+  return not game:IsGreedMode() and
+         (stage == LevelStage.STAGE4_2 or stage == LevelStage.STAGE4_1) and
+         (stageType == StageType.STAGETYPE_REPENTANCE or stageType == StageType.STAGETYPE_REPENTANCE_B) and
+         roomDesc.Data.Shape == RoomShape.ROOMSHAPE_1x2 and
+         roomDesc.Data.Type == RoomType.ROOM_BOSS and
+         roomDesc.Data.Variant == 1 and
+         roomDesc.Data.Name == 'Mother' -- ROOM_SECRET_EXIT_IDX or ROOM_DEBUG_IDX
+end
+
 function mod:isTheBeast()
   local level = game:GetLevel()
   local roomDesc = level:GetCurrentRoomDesc()
+  local stage = level:GetStage()
   
-  return level:GetStage() == LevelStage.STAGE8 and
+  return not game:IsGreedMode() and
+         stage == LevelStage.STAGE8 and
          roomDesc.Data.Shape == RoomShape.ROOMSHAPE_1x1 and
          roomDesc.Data.Type == RoomType.ROOM_DUNGEON and
-         roomDesc.Data.Variant == 666 and
-         roomDesc.Data.Name == 'Beast Room'
+         (
+           (roomDesc.Data.Variant == 666 and roomDesc.Data.Name == 'Beast Room') or
+           (roomDesc.Data.Variant == 667 and roomDesc.Data.Name == 'Famine Test') or
+           (roomDesc.Data.Variant == 668 and roomDesc.Data.Name == 'Pestilence Test') or
+           (roomDesc.Data.Variant == 669 and roomDesc.Data.Name == 'War Test') or
+           (roomDesc.Data.Variant == 670 and roomDesc.Data.Name == 'Death Test') or
+           (roomDesc.Data.Variant == 671 and roomDesc.Data.Name == 'Beast Test')
+         ) -- ROOM_SECRET_EXIT_IDX or ROOM_DEBUG_IDX
 end
 
 -- this is required for the MaxScale update to actually trigger
@@ -239,6 +269,9 @@ function mod:setupModConfigMenu()
         mod:save()
         if b then
           mod.global = mod:getSnappedMaxScale()
+          mod.allowUpdate = false
+        else
+          mod.allowUpdate = mod:isMother()
         end
         mod:update()
       end,
@@ -267,143 +300,41 @@ function mod:setupModConfigMenu()
       Info = { 'Default: 99' }
     }
   )
-  ModConfigMenu.AddSetting(
-    mod.Name,
-    'Rooms',
-    {
-      Type = ModConfigMenu.OptionType.NUMBER,
-      CurrentSetting = function()
-        return mod:getMaxScalesIndex(mod.state.room1x1)
-      end,
-      Minimum = 1,
-      Maximum = #mod.maxScales,
-      Display = function()
-        return '1x1: ' .. (mod.state.useGlobal and '(global)' or mod.state.room1x1)
-      end,
-      OnChange = function(n)
-        if not mod.state.useGlobal then
-          mod.state.room1x1 = mod.maxScales[n]
-          mod:save()
-          mod:update()
-        end
-      end,
-      Info = { 'Default: 99' }
-    }
-  )
-  ModConfigMenu.AddSetting(
-    mod.Name,
-    'Rooms',
-    {
-      Type = ModConfigMenu.OptionType.NUMBER,
-      CurrentSetting = function()
-        return mod:getMaxScalesIndex(mod.state.room1x2)
-      end,
-      Minimum = 1,
-      Maximum = #mod.maxScales,
-      Display = function()
-        return '1x2: ' .. (mod.state.useGlobal and '(global)' or mod.state.room1x2)
-      end,
-      OnChange = function(n)
-        if not mod.state.useGlobal then
-          mod.state.room1x2 = mod.maxScales[n]
-          mod:save()
-          mod:update()
-        end
-      end,
-      Info = { 'Recommended: 1-4' }
-    }
-  )
-  ModConfigMenu.AddSetting(
-    mod.Name,
-    'Rooms',
-    {
-      Type = ModConfigMenu.OptionType.NUMBER,
-      CurrentSetting = function()
-        return mod:getMaxScalesIndex(mod.state.room2x1)
-      end,
-      Minimum = 1,
-      Maximum = #mod.maxScales,
-      Display = function()
-        return '2x1: ' .. (mod.state.useGlobal and '(global)' or mod.state.room2x1)
-      end,
-      OnChange = function(n)
-        if not mod.state.useGlobal then
-          mod.state.room2x1 = mod.maxScales[n]
-          mod:save()
-          mod:update()
-        end
-      end,
-      Info = { 'Recommended: 1-4' }
-    }
-  )
-  ModConfigMenu.AddSetting(
-    mod.Name,
-    'Rooms',
-    {
-      Type = ModConfigMenu.OptionType.NUMBER,
-      CurrentSetting = function()
-        return mod:getMaxScalesIndex(mod.state.room2x2)
-      end,
-      Minimum = 1,
-      Maximum = #mod.maxScales,
-      Display = function()
-        return '2x2: ' .. (mod.state.useGlobal and '(global)' or mod.state.room2x2)
-      end,
-      OnChange = function(n)
-        if not mod.state.useGlobal then
-          mod.state.room2x2 = mod.maxScales[n]
-          mod:save()
-          mod:update()
-        end
-      end,
-      Info = { 'Recommended: 1-4' }
-    }
-  )
-  ModConfigMenu.AddSetting(
-    mod.Name,
-    'Misc',
-    {
-      Type = ModConfigMenu.OptionType.NUMBER,
-      CurrentSetting = function()
-        return mod:getMaxScalesIndex(mod.state.theBeast)
-      end,
-      Minimum = 1,
-      Maximum = #mod.maxScales,
-      Display = function()
-        return 'The Beast: ' .. (mod.state.useGlobal and '(global)' or mod.state.theBeast)
-      end,
-      OnChange = function(n)
-        if not mod.state.useGlobal then
-          mod.state.theBeast = mod.maxScales[n]
-          mod:save()
-          mod:update()
-        end
-      end,
-      Info = { 'Default: 99', 'This is a special 1x1 room' }
-    }
-  )
-  ModConfigMenu.AddSetting(
-    mod.Name,
-    'Misc',
-    {
-      Type = ModConfigMenu.OptionType.NUMBER,
-      CurrentSetting = function()
-        return mod:getMaxScalesIndex(mod.state.menu)
-      end,
-      Minimum = 1,
-      Maximum = #mod.maxScales,
-      Display = function()
-        return 'Menu: ' .. (mod.state.useGlobal and '(global)' or mod.state.menu)
-      end,
-      OnChange = function(n)
-        if not mod.state.useGlobal then
-          mod.state.menu = mod.maxScales[n]
-          mod:save()
-        end
-      end,
-      Info = { 'Default: 99' }
-    }
-  )
+  for _, v in ipairs({
+                       { subcategory = 'Rooms', state = 'room1x1' , prefix = '1x1: '             , info = { 'Default: 99', 'Includes skinny rooms' } },
+                       { subcategory = 'Rooms', state = 'room1x2' , prefix = '1x2: '             , info = { 'Recommended: 1-4', 'Includes skinny rooms' } },
+                       { subcategory = 'Rooms', state = 'room2x1' , prefix = '2x1: '             , info = { 'Recommended: 1-4', 'Includes skinny rooms' } },
+                       { subcategory = 'Rooms', state = 'room2x2' , prefix = '2x2: '             , info = { 'Recommended: 1-4', 'Includes L shaped rooms' } },
+                       { subcategory = 'Misc' , state = 'mother1' , prefix = 'Mother 1st phase: ', info = { 'Default: 4', 'This is a special slightly larger than 1x1 room' } },
+                       { subcategory = 'Misc' , state = 'mother2' , prefix = 'Mother 2nd phase: ', info = { 'Default: 4', 'This is a special 1x2 room' } },
+                       { subcategory = 'Misc' , state = 'theBeast', prefix = 'The Beast: '       , info = { 'Default: 99', 'This is a special 1x1 room' } },
+                       { subcategory = 'Misc' , state = 'menu'    , prefix = 'Menu: '            , info = { 'Default: 99' } }
+                    })
+  do
+    ModConfigMenu.AddSetting(
+      mod.Name,
+      v.subcategory,
+      {
+        Type = ModConfigMenu.OptionType.NUMBER,
+        CurrentSetting = function()
+          return mod:getMaxScalesIndex(mod.state[v.state])
+        end,
+        Minimum = 1,
+        Maximum = #mod.maxScales,
+        Display = function()
+          return v.prefix .. (mod.state.useGlobal and '(global)' or mod.state[v.state])
+        end,
+        OnChange = function(n)
+          if not mod.state.useGlobal then
+            mod.state[v.state] = mod.maxScales[n]
+            mod:save()
+            mod:update()
+          end
+        end,
+        Info = v.info
+      }
+    )
+  end
   for _, value in ipairs({ 'Global', 'Rooms', 'Misc' }) do
     ModConfigMenu.AddSpace(mod.Name, value)
     ModConfigMenu.AddText(mod.Name, value, '1-4 and 99 are available to select')
