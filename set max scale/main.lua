@@ -4,6 +4,7 @@ local game = Game()
 
 -- 5-99 seem to have the same behavior
 mod.maxScales = { 1, 2, 3, 4, 99 }
+mod.onGameStartHasRun = false
 mod.allowUpdate = false
 mod.global = 99
 
@@ -13,14 +14,22 @@ mod.state.room1x1 = 99
 mod.state.room1x2 = 4
 mod.state.room2x1 = 4
 mod.state.room2x2 = 3
-mod.state.mother1 = 4  -- 1x1ish
+mod.state.mother1 = 4   -- 1x1ish
 mod.state.mother2 = 4   -- 1x2
 mod.state.theBeast = 99 -- 1x1
 mod.state.menu = 99
 mod.state.enableKeyboard = true
 
+function mod:onGameStart()
+  mod:loadSaveData()
+  
+  mod.onGameStartHasRun = true
+  mod:onNewRoom()
+end
+
 function mod:onGameExit()
   mod:save()
+  mod.onGameStartHasRun = false
   
   -- set the menu scale when exiting back to the menu
   -- this doesn't work when exiting the game while in-game
@@ -30,6 +39,10 @@ function mod:onGameExit()
 end
 
 function mod:onNewRoom()
+  if not mod.onGameStartHasRun then
+    return
+  end
+  
   if not mod.state.useGlobal and mod:isTheBeast() then
     mod:update() -- the beast looks better triggering it from here
     mod.allowUpdate = false
@@ -371,11 +384,12 @@ end
 -- end ModConfigMenu --
 
 -- set the menu scale when starting up since this may have failed on exit
-mod:loadSaveData()
+mod:loadSaveData() -- defaults to 1st save slot
 if not mod.state.useGlobal then
   mod:update(mod.state.menu)
 end
 
+mod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, mod.onGameStart)
 mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, mod.onGameExit)
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.onNewRoom)
 mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.onUpdate)
