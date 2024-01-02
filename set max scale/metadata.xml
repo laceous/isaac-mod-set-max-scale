@@ -9,14 +9,14 @@ The default of 99 works fine for normal rooms, but if you're in a larger room th
 
 This mod can auto-update MaxScale depending on if you're in a normal vs large room. There's also separate options for Mother, The Beast, and the menu.
 
-Unfortunately, setting MaxScale via the API doesn't do anything on its own. We need to trigger an update. For now, that happens by toggling fullscreen (on then back off, or off then back on). That might be too annoying for some, but it appears to be a limitation of the API.
+Unfortunately, setting MaxScale via the API doesn't do anything on its own. We need to trigger an update. For now, that happens by toggling fullscreen (on then back off, or off then back on). That might be too annoying for some, but it appears to be a limitation of the API. (Update: If you have REPENTOGON then fullscreen doesn't need to be toggled anymore. There's still a small delay when the game updates, but it looks better than it did before.)
 
 Mod Config Menu is required to change settings.
 
 You can press &lt; or &gt; (shift + , or shift + .) on your keyboard to cycle through the available options.
 
 Note: When the game starts up, it will try to load the scale setting for the menu from save slot #1.</description>
-    <version>1.14</version>
+    <version>1.15</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Tweaks"/>

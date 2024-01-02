@@ -167,7 +167,7 @@ function mod:update(override)
   -- if another mod sets MaxScale without triggering it then this could be in a bad state
   if Options.MaxScale ~= maxScale then
     Options.MaxScale = maxScale
-    mod:toggleFullscreen() -- hack
+    mod:triggerWindowResize()
   end
 end
 
@@ -241,10 +241,14 @@ function mod:isTheBeast()
 end
 
 -- this is required for the MaxScale update to actually trigger
--- you can also change the window size, but there doesn't seem to be a way to do that via code
-function mod:toggleFullscreen()
-  Options.Fullscreen = not Options.Fullscreen
-  Options.Fullscreen = not Options.Fullscreen
+function mod:triggerWindowResize()
+  if REPENTOGON then
+    Isaac.TriggerWindowResize()
+  else
+    -- toggle fullscreen
+    Options.Fullscreen = not Options.Fullscreen
+    Options.Fullscreen = not Options.Fullscreen
+  end
 end
 
 -- snap MaxScale to our list of allowed maxScales
