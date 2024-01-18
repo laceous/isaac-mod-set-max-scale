@@ -2,7 +2,7 @@ local mod = RegisterMod('Set Max Scale', 1)
 local json = require('json')
 local game = Game()
 
--- 5-99 seem to have the same behavior
+-- 5-99 seem to have the same behavior on a 2560x1440 screen
 mod.maxScales = { 1, 2, 3, 4, 99 }
 mod.onGameStartHasRun = false
 mod.allowUpdate = false
@@ -19,6 +19,7 @@ mod.state.mother2 = 4   -- 1x2
 mod.state.theBeast = 99 -- 1x1
 mod.state.menu = 99
 mod.state.enableKeyboard = true
+mod.state.preferFullscreenToggle = false
 
 function mod:onGameStart()
   mod:loadSaveData()
@@ -125,16 +126,15 @@ function mod:loadSaveData()
     local _, state = pcall(json.decode, mod:LoadData()) -- deal with bad json data
     
     if type(state) == 'table' then
-      if type(state.useGlobal) == 'boolean' then
-        mod.state.useGlobal = state.useGlobal
+      for _, v in ipairs({ 'useGlobal', 'enableKeyboard', 'preferFullscreenToggle' }) do
+        if type(state[v]) == 'boolean' then
+          mod.state[v] = state[v]
+        end
       end
       for _, v in ipairs({ 'room1x1', 'room1x2', 'room2x1', 'room2x2', 'mother1', 'mother2', 'theBeast', 'menu' }) do
         if math.type(state[v]) == 'integer' and mod:getMaxScalesIndex(state[v]) >= 1 then
           mod.state[v] = state[v]
         end
-      end
-      if type(state.enableKeyboard) == 'boolean' then
-        mod.state.enableKeyboard = state.enableKeyboard
       end
     end
   end
@@ -242,12 +242,12 @@ end
 
 -- this is required for the MaxScale update to actually trigger
 function mod:triggerWindowResize()
-  if REPENTOGON then
-    Isaac.TriggerWindowResize()
-  else
+  if not REPENTOGON or mod.state.preferFullscreenToggle then
     -- toggle fullscreen
     Options.Fullscreen = not Options.Fullscreen
     Options.Fullscreen = not Options.Fullscreen
+  else
+    Isaac.TriggerWindowResize()
   end
 end
 
@@ -360,30 +360,39 @@ function mod:setupModConfigMenu()
     ModConfigMenu.AddText(mod.Name, value, 'This is equivalent to setting')
     ModConfigMenu.AddText(mod.Name, value, 'MaxScale in options.ini')
   end
-  ModConfigMenu.AddSetting(
-    mod.Name,
-    'Keyboard',
-    {
-      Type = ModConfigMenu.OptionType.BOOLEAN,
-      CurrentSetting = function()
-        return mod.state.enableKeyboard
-      end,
-      Display = function()
-        return 'Keyboard ' .. (mod.state.enableKeyboard and 'enabled' or 'disabled')
-      end,
-      OnChange = function(b)
-        mod.state.enableKeyboard = b
-        mod:save()
-      end,
-      Info = { 'Enable or disable keyboard controls' }
-    }
-  )
-  ModConfigMenu.AddSpace(mod.Name, 'Keyboard')
-  ModConfigMenu.AddText(mod.Name, 'Keyboard', 'Cycle through the')
-  ModConfigMenu.AddText(mod.Name, 'Keyboard', 'available options with')
-  ModConfigMenu.AddSpace(mod.Name, 'Keyboard')
-  ModConfigMenu.AddText(mod.Name, 'Keyboard',      '<      or      >')
-  ModConfigMenu.AddText(mod.Name, 'Keyboard', '(shift + ,) or (shift + .)')
+  for i, v in ipairs({
+                      { state = 'preferFullscreenToggle', displayOn = 'Prefer fullscreen toggle', displayOff = 'Do not prefer fullscreen toggle', info = { 'Do you want to continue toggling', 'fullscreen with Repentogon?' } },
+                      { state = 'enableKeyboard'        , displayOn = 'Keyboard enabled'        , displayOff = 'Keyboard disabled'              , info = { 'Enable or disable keyboard controls' } }
+                    })
+  do
+    if i ~= 1 then
+      ModConfigMenu.AddSpace(mod.Name, 'Settings')
+    end
+    ModConfigMenu.AddSetting(
+      mod.Name,
+      'Settings',
+      {
+        Type = ModConfigMenu.OptionType.BOOLEAN,
+        CurrentSetting = function()
+          return mod.state[v.state]
+        end,
+        Display = function()
+          return mod.state[v.state] and v.displayOn or v.displayOff
+        end,
+        OnChange = function(b)
+          mod.state[v.state] = b
+          mod:save()
+        end,
+        Info = v.info
+      }
+    )
+  end
+  ModConfigMenu.AddSpace(mod.Name, 'Settings')
+  ModConfigMenu.AddText(mod.Name, 'Settings', 'Cycle through the')
+  ModConfigMenu.AddText(mod.Name, 'Settings', 'available options with')
+  ModConfigMenu.AddSpace(mod.Name, 'Settings')
+  ModConfigMenu.AddText(mod.Name, 'Settings',      '<      or      >')
+  ModConfigMenu.AddText(mod.Name, 'Settings', '(shift + ,) or (shift + .)')
 end
 -- end ModConfigMenu --
 
