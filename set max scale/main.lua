@@ -212,6 +212,11 @@ function mod:isMother()
   local stage = level:GetStage()
   local stageType = level:GetStageType()
   
+  if StageAPI and StageAPI.CurrentStage and not StageAPI.CurrentStage.NormalStage and StageAPI.CurrentStage.LevelgenStage and not StageAPI.InTestMode then
+    stage = StageAPI.CurrentStage.LevelgenStage.Stage
+    stageType = StageAPI.CurrentStage.LevelgenStage.StageType
+  end
+  
   return not game:IsGreedMode() and
          (stage == LevelStage.STAGE4_2 or stage == LevelStage.STAGE4_1) and
          (stageType == StageType.STAGETYPE_REPENTANCE or stageType == StageType.STAGETYPE_REPENTANCE_B) and
