@@ -217,13 +217,14 @@ function mod:isMother()
     stageType = StageAPI.CurrentStage.LevelgenStage.StageType
   end
   
+  -- ROOM_SECRET_EXIT_IDX or ROOM_DEBUG_IDX
   return not game:IsGreedMode() and
          (stage == LevelStage.STAGE4_2 or stage == LevelStage.STAGE4_1) and
          (stageType == StageType.STAGETYPE_REPENTANCE or stageType == StageType.STAGETYPE_REPENTANCE_B) and
          roomDesc.Data.Shape == RoomShape.ROOMSHAPE_1x2 and
          roomDesc.Data.Type == RoomType.ROOM_BOSS and
-         roomDesc.Data.Variant == 1 and
-         roomDesc.Data.Name == 'Mother' -- ROOM_SECRET_EXIT_IDX or ROOM_DEBUG_IDX
+         roomDesc.Data.StageID == 33 and -- corpse
+         roomDesc.Data.Variant == 1      -- Mother
 end
 
 function mod:isTheBeast()
@@ -231,18 +232,25 @@ function mod:isTheBeast()
   local roomDesc = level:GetCurrentRoomDesc()
   local stage = level:GetStage()
   
+  -- ROOM_SECRET_EXIT_IDX or ROOM_DEBUG_IDX
   return not game:IsGreedMode() and
          stage == LevelStage.STAGE8 and
          roomDesc.Data.Shape == RoomShape.ROOMSHAPE_1x1 and
          roomDesc.Data.Type == RoomType.ROOM_DUNGEON and
          (
-           (roomDesc.Data.Variant == 666 and roomDesc.Data.Name == 'Beast Room') or
-           (roomDesc.Data.Variant == 667 and roomDesc.Data.Name == 'Famine Test') or
-           (roomDesc.Data.Variant == 668 and roomDesc.Data.Name == 'Pestilence Test') or
-           (roomDesc.Data.Variant == 669 and roomDesc.Data.Name == 'War Test') or
-           (roomDesc.Data.Variant == 670 and roomDesc.Data.Name == 'Death Test') or
-           (roomDesc.Data.Variant == 671 and roomDesc.Data.Name == 'Beast Test')
-         ) -- ROOM_SECRET_EXIT_IDX or ROOM_DEBUG_IDX
+           (
+             roomDesc.Data.StageID == 35 and -- home
+             (
+               roomDesc.Data.Variant == 666 or -- Beast Room
+               roomDesc.Data.Variant == 667 or -- Famine Test
+               roomDesc.Data.Variant == 668 or -- Pestilence Test
+               roomDesc.Data.Variant == 669 or -- War Test
+               roomDesc.Data.Variant == 670 or -- Death Test
+               roomDesc.Data.Variant == 671    -- Beast Test
+             )
+           ) or
+           roomDesc.Data.Subtype == 4
+         )
 end
 
 -- this is required for the MaxScale update to actually trigger
