@@ -71,7 +71,8 @@ function mod:onRender()
     return
   end
   
-  local keyboard = 0 -- keyboard seems to always be at index zero, even if you have multiple keyboards plugged in, controllers start at 1
+  -- keyboard seems to always be at index zero, even if you have multiple keyboards plugged in, controllers start at 1
+  local keyboard = (REPENTANCE_PLUS and not REPENTOGON) and -2 or 0 -- latest version of rep+ changed keyboard to -2, controllers start at 0
   
   -- shift + , = <
   if (Input.IsButtonPressed(Keyboard.KEY_LEFT_SHIFT, keyboard) or Input.IsButtonPressed(Keyboard.KEY_RIGHT_SHIFT, keyboard)) and Input.IsButtonTriggered(Keyboard.KEY_COMMA, keyboard) then
